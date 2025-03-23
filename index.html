@@ -51,6 +51,7 @@
             border: 2px solid #8b0000;
             box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
             font-size: 28px;
+            opacity: 1;
         }
 
         .die i {
@@ -78,7 +79,7 @@
             }
 
             100% {
-                transform: rotateX(720deg) rotateY(720deg);
+                transform: rotateX(360deg) rotateY(360deg);
             }
         }
 
@@ -115,6 +116,40 @@
             background-color: #ff0000;
             box-shadow: 0 0 20px rgba(255, 0, 0, 0.8);
         }
+
+        /* Fade-Out Animation for Die Face */
+        .fade-out {
+            animation: fade-out 0.5s forwards;
+        }
+
+        /* Fade-In Animation for Die Face */
+        .fade-in {
+            animation: fade-in 0.5s forwards;
+        }
+
+        @keyframes fade-out {
+            0% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0;
+            }
+        }
+
+        @keyframes fade-in {
+            0% {
+                opacity: 0;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .die-face {
+            transition: opacity 0.5s;
+        }
     </style>
 </head>
 
@@ -143,7 +178,6 @@
             '<i class="bi bi-search"></i>',    // 🔍
             '', '', ''
         ];
-        let lastShakeTime = 0;
 
         function updateNoDiceMessage() {
             noDiceMessage.style.display = diceContainer.children.length === 0 ? "block" : "none";
@@ -152,8 +186,16 @@
         function addDie() {
             const die = document.createElement("div");
             die.classList.add("die", "shadow-sm");
-            die.innerHTML = "-";
+
+            const dieFace = document.createElement("div");
+            dieFace.classList.add("die-face");
+            dieFace.innerHTML = "-";
+
+            die.appendChild(dieFace);
+
             die.onclick = () => die.classList.toggle("locked");
+
+            die.dataset.face = "-"; // Store initial face
             diceContainer.appendChild(die);
             updateNoDiceMessage();
         }
@@ -169,50 +211,31 @@
         function rollDice() {
             document.querySelectorAll(".die").forEach(die => {
                 if (!die.classList.contains("locked")) {
+                    const dieFace = die.querySelector(".die-face");
+
+                    if (dieFace) {
+                        // Fade-out the die face
+                        dieFace.classList.add("fade-out");
+                        dieFace.classList.remove("fade-in");
+
+                        setTimeout(() => {
+                            // Fade-in the new result
+                            dieFace.classList.remove("fade-out");
+                            dieFace.classList.add("fade-in");
+                            const result = faces[Math.floor(Math.random() * faces.length)];
+                            dieFace.innerHTML = result; // Update die face
+                            die.dataset.face = result; // Store the result as data attribute
+                        }, 500); // Timeout to match the fade-out duration
+                    }
+
                     die.classList.add("rolling");
 
                     setTimeout(() => {
                         die.classList.remove("rolling");
-                        die.innerHTML = faces[Math.floor(Math.random() * faces.length)];
                     }, 1000);
                 }
             });
         }
-
-        function handleShake(event) {
-            const { accelerationIncludingGravity } = event;
-            const threshold = 15;
-            const now = Date.now();
-
-            if (accelerationIncludingGravity) {
-                const totalAcceleration = Math.abs(accelerationIncludingGravity.x) +
-                    Math.abs(accelerationIncludingGravity.y) +
-                    Math.abs(accelerationIncludingGravity.z);
-
-                if (totalAcceleration > threshold && now - lastShakeTime > 1000) {
-                    lastShakeTime = now;
-                    rollDice();
-                }
-            }
-        }
-
-        function enableShakeDetection() {
-            if (typeof DeviceMotionEvent.requestPermission === "function") {
-                DeviceMotionEvent.requestPermission()
-                    .then(permissionState => {
-                        if (permissionState === "granted") {
-                            window.addEventListener("devicemotion", handleShake);
-                        }
-                    })
-                    .catch(console.error);
-            } else {
-                window.addEventListener("devicemotion", handleShake);
-            }
-        }
-
-        window.onload = function () {
-            document.querySelector(".btn-roll").addEventListener("click", enableShakeDetection);
-        };
 
         for (let i = 0; i < 3; i++) {
             addDie();
