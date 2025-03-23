@@ -275,11 +275,6 @@
         }
 
         function rollDice() {
-            successCount = 0;
-            blankCount = 0;
-            clueCount = 0;
-            totalRolls = 0;
-
             Array.from(diceContainer.children).forEach(die => {
                 if (!die.classList.contains("locked")) {
                     const randomFace = faces[Math.floor(Math.random() * faces.length)];
