@@ -117,12 +117,20 @@
             box-shadow: 0 0 20px rgba(255, 0, 0, 0.8);
         }
 
-        /* Fade-Out Animation for Die Face */
+        .stat-icon {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            font-size: 30px;
+            color: #ff4444;
+            cursor: pointer;
+            z-index: 10;
+        }
+
         .fade-out {
             animation: fade-out 0.5s forwards;
         }
 
-        /* Fade-In Animation for Die Face */
         .fade-in {
             animation: fade-in 0.5s forwards;
         }
@@ -150,6 +158,30 @@
         .die-face {
             transition: opacity 0.5s;
         }
+
+        /* Modal Styling */
+        .modal-content {
+            background-color: #1e1e1e;
+            color: #e0e0e0;
+        }
+
+        .modal-header,
+        .modal-footer {
+            border-color: #8b0000;
+        }
+
+        .btn-close {
+            color: #ff4444;
+        }
+
+        .btn-danger {
+            background-color: #8b0000;
+            border: none;
+        }
+
+        .btn-danger:hover {
+            background-color: #ff0000;
+        }
     </style>
 </head>
 
@@ -167,17 +199,51 @@
         <button class="btn btn-roll" onclick="rollDice()">🎲 Roll 🎲</button>
     </div>
 
+    <!-- Stats Icon to show modal -->
+    <div class="position-fixed" style="top: 0; right: 0;">
+        <i class="bi bi-stars stat-icon" onclick="showStats()"></i>
+    </div>
+
+    <!-- Stats Modal -->
+    <div class="modal fade" id="statsModal" tabindex="-1" aria-labelledby="statsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="statsModalLabel">Dice Roll Stats</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Successes: <span id="successCount">0</span></p>
+                    <p>Blanks: <span id="blankCount">0</span></p>
+                    <p>Clues: <span id="clueCount">0</span></p>
+                    <p>Total Rolls: <span id="totalRolls">0</span></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" onclick="resetStats()">Reset Stats</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
         const diceContainer = document.getElementById("diceContainer");
         const noDiceMessage = document.getElementById("noDiceMessage");
         const faces = [
-            '<i class="bi bi-star-fill"></i>', // ★
-            '<i class="bi bi-star-fill"></i>', // ★
-            '<i class="bi bi-search"></i>',    // 🔍
-            '<i class="bi bi-search"></i>',    // 🔍
-            '<i class="bi bi-search"></i>',    // 🔍
+            '<i class="bi bi-star-fill"></i>', // ★ (Success)
+            '<i class="bi bi-star-fill"></i>', // ★ (Success)
+            '<i class="bi bi-search"></i>',    // 🔍 (Clue)
+            '<i class="bi bi-search"></i>',    // 🔍 (Clue)
+            '<i class="bi bi-search"></i>',    // 🔍 (Clue)
             '', '', ''
         ];
+
+        let successCount = 0;
+        let blankCount = 0;
+        let clueCount = 0;
+        let totalRolls = 0;
 
         function updateNoDiceMessage() {
             noDiceMessage.style.display = diceContainer.children.length === 0 ? "block" : "none";
@@ -196,22 +262,44 @@
             die.onclick = () => die.classList.toggle("locked");
 
             die.dataset.face = "-"; // Store initial face
+
             diceContainer.appendChild(die);
             updateNoDiceMessage();
         }
 
         function removeDie() {
-            const lastDie = diceContainer.lastElementChild;
-            if (lastDie) {
-                diceContainer.removeChild(lastDie);
+            if (diceContainer.children.length > 0) {
+                diceContainer.removeChild(diceContainer.lastChild);
                 updateNoDiceMessage();
             }
         }
 
         function rollDice() {
-            document.querySelectorAll(".die").forEach(die => {
+            successCount = 0;
+            blankCount = 0;
+            clueCount = 0;
+            totalRolls = 0;
+
+            Array.from(diceContainer.children).forEach(die => {
                 if (!die.classList.contains("locked")) {
+                    const randomFace = faces[Math.floor(Math.random() * faces.length)];
                     const dieFace = die.querySelector(".die-face");
+
+                    // Count rolls
+                    totalRolls++;
+
+                    // Count success
+                    if (randomFace === faces[0]) {
+                        successCount++;
+                    }
+                    // Count clue
+                    if (randomFace === faces[2]) {
+                        clueCount++;
+                    }
+                    // Count blank
+                    if (randomFace === "") {
+                        blankCount++;
+                    }
 
                     if (dieFace) {
                         // Fade-out the die face
@@ -222,26 +310,46 @@
                             // Fade-in the new result
                             dieFace.classList.remove("fade-out");
                             dieFace.classList.add("fade-in");
-                            const result = faces[Math.floor(Math.random() * faces.length)];
-                            dieFace.innerHTML = result; // Update die face
-                            die.dataset.face = result; // Store the result as data attribute
+
+                            dieFace.innerHTML = randomFace;
+                            die.dataset.face = randomFace;
                         }, 500); // Timeout to match the fade-out duration
                     }
 
+                    // Apply roll animation
                     die.classList.add("rolling");
-
-                    setTimeout(() => {
-                        die.classList.remove("rolling");
-                    }, 1000);
+                    setTimeout(() => die.classList.remove("rolling"), 1000);
                 }
             });
+
+            updateStats();
+        }
+
+        function updateStats() {
+            document.getElementById("successCount").innerText = successCount;
+            document.getElementById("blankCount").innerText = blankCount;
+            document.getElementById("clueCount").innerText = clueCount;
+            document.getElementById("totalRolls").innerText = totalRolls;
+        }
+
+        function resetStats() {
+            successCount = 0;
+            blankCount = 0;
+            clueCount = 0;
+            totalRolls = 0;
+
+            updateStats();
+        }
+
+        function showStats() {
+            const statsModal = new bootstrap.Modal(document.getElementById("statsModal"));
+            statsModal.show();
         }
 
         for (let i = 0; i < 3; i++) {
             addDie();
         }
     </script>
-
 </body>
 
 </html>
