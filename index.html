@@ -31,10 +31,10 @@
         .dice-container {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
             justify-content: center;
             margin-bottom: 80px;
             padding: 10px;
+            align-items: center;
         }
 
         .die {
@@ -52,6 +52,7 @@
             box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
             font-size: 28px;
             opacity: 1;
+            margin: 5px;
         }
 
         .die i {
@@ -67,6 +68,21 @@
             border-color: #666;
             color: #999;
             box-shadow: none;
+            transform: scale(0.9);
+        }
+
+        .locked i {
+            text-shadow: 2px 2px 5px #999;
+        }
+
+        .locked::after {
+            content: "Locked";
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            font-size: 15px;
+            transform: translateX(-50%);
+            color: #eee;
         }
 
         .rolling {
@@ -75,11 +91,11 @@
 
         @keyframes eerie-spin {
             0% {
-                transform: rotateX(0deg) rotateY(0deg);
+                transform: perspective(20rem) rotateY(0deg);
             }
 
             100% {
-                transform: rotateX(360deg) rotateY(360deg);
+                transform: perspective(20rem) rotateY(720deg);
             }
         }
 
@@ -101,6 +117,7 @@
             justify-content: center;
             gap: 10px;
             border-top: 2px solid #ff4444;
+            flex-wrap: wrap;
         }
 
         .btn-roll {
@@ -155,8 +172,29 @@
             }
         }
 
+        .die-in {
+            animation: die-animation 0.75s reverse;
+        }
+
+        .die-out {
+            animation: die-animation 0.75s forwards;
+        }
+
+        @keyframes die-animation {
+            0% {
+                transform: perspective(20rem) rotateY(0) scale(1);
+            }
+
+            100% {
+                width: 0;
+                height: 0;
+                margin: 0;
+                transform: perspective(20rem) rotateY(360deg) scale(0.01);
+            }
+        }
+
         .die-face {
-            transition: opacity 0.5s;
+            transition: all 0.5s;
         }
 
         /* Modal Styling */
@@ -188,14 +226,22 @@
 <body>
 
     <h1>Mansions of Madness Dice Roller</h1>
+    <span class="text-danger">(Tap dice to locked)</span>
 
     <div id="diceContainer" class="dice-container"></div>
-    <p id="noDiceMessage" class="no-dice-message" style="display: none;">No dice available. Click "Add Die" to start.
+    <p id="noDiceMessage" class="no-dice-message" style="display: none;">
+        No dice available. Click "Add Die" to start.
     </p>
 
     <div class="controls">
-        <button class="btn btn-outline-danger col-3" onclick="removeDie()">Remove Die</button>
-        <button class="btn btn-outline-primary col-3" onclick="addDie()">Add Die</button>
+        <button class="btn btn-outline-secondary" onclick="setDie(1)">1 🎲</button>
+        <button class="btn btn-outline-secondary" onclick="setDie(2)">2 🎲</button>
+        <button class="btn btn-outline-secondary" onclick="setDie(3)">3 🎲</button>
+        <button class="btn btn-outline-secondary" onclick="setDie(4)">4 🎲</button>
+        <button class="btn btn-outline-secondary" onclick="setDie(5)">5 🎲</button>
+        <div class="w-100"></div>
+        <button class="btn btn-outline-danger col-3" onclick="removeDie()">Remove</button>
+        <button class="btn btn-outline-primary col-3" onclick="addDie()">Add</button>
         <button class="btn btn-roll" onclick="rollDice()">🎲 Roll 🎲</button>
     </div>
 
@@ -251,26 +297,49 @@
 
         function addDie() {
             const die = document.createElement("div");
-            die.classList.add("die", "shadow-sm");
+            die.classList.add("die", "shadow-sm", "die-in");
 
             const dieFace = document.createElement("div");
             dieFace.classList.add("die-face");
-            dieFace.innerHTML = "-";
+            dieFace.innerHTML = faces[Math.floor(Math.random() * faces.length)];
 
             die.appendChild(dieFace);
 
             die.onclick = () => die.classList.toggle("locked");
 
-            die.dataset.face = "-"; // Store initial face
+            die.dataset.face = faces[Math.floor(Math.random() * faces.length)]; // Store initial face
 
             diceContainer.appendChild(die);
             updateNoDiceMessage();
+
+            setTimeout(() => {
+                die.classList.remove("die-in");
+            }, 1000);
         }
 
         function removeDie() {
             if (diceContainer.children.length > 0) {
-                diceContainer.removeChild(diceContainer.lastChild);
-                updateNoDiceMessage();
+                const removedDie = Array.from(diceContainer.children).reverse().find((die) => (!die.classList.contains("die-out")));
+                if (!removedDie) return;
+                removedDie.classList.add("die-out");
+                setTimeout(() => {
+                    diceContainer.removeChild(removedDie);
+                    updateNoDiceMessage();
+                }, 500);
+            }
+        }
+
+        function setDie(n) {
+            if (n < 0) return;
+            let dieCount = diceContainer.children.length;
+            while (dieCount != n) {
+                if (dieCount > n) {
+                    removeDie();
+                    dieCount -= 1;
+                } else {
+                    addDie();
+                    dieCount += 1;
+                }
             }
         }
 
