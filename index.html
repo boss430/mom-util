@@ -275,17 +275,14 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        const diceContainer = document.getElementById("diceContainer");
-        const noDiceMessage = document.getElementById("noDiceMessage");
+        const SUCCESS_FACE = '<i class="bi bi-star-fill"></i>'; // ★ (Success)
+        const CLUE_FACE = '<i class="bi bi-search"></i>';    // 🔍 (Clue)
+        const BLANK_FACE = '';
+
         const faces = [
-            '<i class="bi bi-star-fill"></i>', // ★ (Success)
-            '<i class="bi bi-star-fill"></i>', // ★ (Success)
-'<i class="bi bi-star-fill"></i>', // ★ (Success)
-            '<i class="bi bi-star-fill"></i>', // ★ (Success)
-            '<i class="bi bi-search"></i>',    // 🔍 (Clue)
-            '<i class="bi bi-search"></i>',    // 🔍 (Clue)
-            '<i class="bi bi-search"></i>',    // 🔍 (Clue)
-            '', '', ''
+            ...Array(4).fill(SUCCESS_FACE),
+            ...Array(3).fill(CLUE_FACE),
+            ...Array(3).fill(BLANK_FACE)
         ];
 
         let successCount = 0;
@@ -355,15 +352,15 @@
                     totalRolls++;
 
                     // Count success
-                    if (randomFace === faces[0]) {
+                    if (randomFace === SUCCESS_FACE) {
                         successCount++;
                     }
                     // Count clue
-                    if (randomFace === faces[2]) {
+                    else if (randomFace === CLUE_FACE) {
                         clueCount++;
                     }
                     // Count blank
-                    if (randomFace === "") {
+                    else if (randomFace === BLANK_FACE) {
                         blankCount++;
                     }
 
@@ -412,9 +409,7 @@
             statsModal.show();
         }
 
-        for (let i = 0; i < 3; i++) {
-            addDie();
-        }
+        setDie(3);
     </script>
 </body>
 
